@@ -9,8 +9,8 @@
   const save = (key, value) => { try { localStorage.setItem('neon-extra-' + key, value); } catch {} };
   const load = (key, fallback = '') => { try { return localStorage.getItem('neon-extra-' + key) ?? fallback; } catch { return fallback; } };
   const safe = (str) => String(str).replace(/[&<>"']/g, x => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));
-  const appNames = {files:'Файлы',focus:'Фокус',settings:'Настройки',achievements:'Достижения',reaction:'Реакция',store:'Магазин'};
-  const appIcons = {files:'▣',focus:'◴',settings:'⚙',achievements:'★',reaction:'⚡',store:'✧'};
+  const appNames = {hub:'Центр',files:'Файлы',focus:'Фокус',settings:'Настройки',achievements:'Достижения',reaction:'Реакция',store:'Магазин'};
+  const appIcons = {hub:'✦',files:'▣',focus:'◴',settings:'⚙',achievements:'★',reaction:'⚡',store:'✧'};
   const active = new Map();
   let layer = 200;
   let timerHandle = null;
@@ -54,10 +54,10 @@
     button.addEventListener('click',()=>openApp(id));
     dock.insertBefore(button, dock.querySelector('#theme-btn').previousElementSibling);
   }
-  const installed=()=> { try { return JSON.parse(load('installed','["files","settings","store"]')); } catch { return ['files','settings','store']; } };
+  const installed=()=> { try { return JSON.parse(load('installed','["hub","files","settings","store"]')); } catch { return ['hub','files','settings','store']; } };
   const persistInstalled = list => save('installed',JSON.stringify(list));
   function refreshApps() {
-    const set = new Set([...installed(),'store','settings']);
+    const set = new Set([...installed(),'hub','store','settings']);
     Object.keys(appNames).forEach(id=>{
       const on=set.has(id);
       if(on) addShortcut(id);
@@ -133,9 +133,18 @@
     const win=makeWindow(id);
     active.set(id,win);
     const content=$('.extra-content',win);
-    const pages={files:renderFiles,focus:renderFocus,settings:renderSettings,achievements:renderAchievements,reaction:renderReaction,store:renderStore};
+    const pages={hub:renderHub,files:renderFiles,focus:renderFocus,settings:renderSettings,achievements:renderAchievements,reaction:renderReaction,store:renderStore};
     pages[id](content,win);
-    if(id!=='store'&&id!=='settings') unlock('explorer');
+    if(!['store','settings','hub'].includes(id)) unlock('explorer');
+  }
+  function renderHub(root) {
+    const opened = unlocked();
+    const completed=Object.keys(achievements).filter(k=>opened[k]).length;
+    const best=Number(load('reaction-best','0'));
+    const fileCount=filesData().length;
+    const wall=wallpapers[load('wallpaper','cosmos')]?.[0] || 'Космос';
+    root.innerHTML='<div class="hub-top"><div><span class="hub-eyebrow">NEON OS · ОБЗОР</span><h2>Твой рабочий стол ✦</h2><p>Всё самое важное в одном месте.</p></div><span class="hub-orbit">✧</span></div><div class="hub-stats"><div><span>ТВОИ ФАЙЛЫ</span><strong>'+fileCount+'</strong></div><div><span>ДОСТИЖЕНИЯ</span><strong>'+completed+' / '+Object.keys(achievements).length+'</strong></div><div><span>РЕАКЦИЯ</span><strong>'+(best?best+' мс':'—')+'</strong></div></div><h3 class="extra-subtitle">БЫСТРЫЕ ДЕЙСТВИЯ</h3><div class="hub-actions"><button data-go="files"><span>▣</span><strong>Мои файлы</strong><small>Записи и идеи</small></button><button data-go="focus"><span>◴</span><strong>Фокус</strong><small>Заняться делом</small></button><button data-go="reaction"><span>⚡</span><strong>Реакция</strong><small>Побить рекорд</small></button><button data-go="settings"><span>⚙</span><strong>Настройки</strong><small>Обои: '+safe(wall)+'</small></button></div><div class="hub-footer"><span class="status-dot"></span> Локальное хранение данных · без аккаунтов и серверов</div>';
+    root.querySelectorAll('[data-go]').forEach(btn=>btn.addEventListener('click',()=>openApp(btn.dataset.go)));
   }
   function filesData() {
     try { const data=JSON.parse(load('files','[]'));return Array.isArray(data)?data:[]; } catch {return [];}
@@ -250,14 +259,24 @@
     });
   }
   function renderReaction(root,win) {
-    root.innerHTML='<div class="extra-head"><h2>⚡ Проверь реакцию</h2><p>Нажми, когда экран станет зелёным</p></div><button class="reaction-field" type="button"><strong>НАЖМИ ДЛЯ СТАРТА</strong><span>Не торопись, дождись сигнала</span></button><div class="reaction-record">Рекорд: <b>пока нет</b></div>';
+    root.innerHTML='<div class="extra-head"><h2>⚡ Проверь реакцию</h2><p>Нажимай мышью или пробелом, когда экран станет зелёным</p></div><button class="reaction-field" type="button"><strong>НАЖМИ ДЛЯ СТАРТА</strong><span>Не торопись, дождись сигнала</span></button><div class="reaction-record">Рекорд: <b>пока нет</b></div>';
     const field=$('.reaction-field',root),record=$('.reaction-record b',root);
     let state='idle',start=0,timeout=null;
     const best=Number(load('reaction-best','0'));
     record.textContent=best?best+' мс':'пока нет';
     function reset() {clearTimeout(timeout);state='idle';field.className='reaction-field';field.querySelector('strong').textContent='НАЖМИ ДЛЯ СТАРТА';field.querySelector('span').textContent='Не торопись, дождись сигнала';}
-    win._cleanup=reset;
-    field.onclick=()=>{
+    const onSpace = e => {
+      if(e.code !== 'Space' || e.repeat || !win.isConnected || win.classList.contains('hidden') || !win.classList.contains('active')) return;
+      if(!document.querySelector('.command-palette')?.classList.contains('hidden')) return;
+      if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      press();
+    };
+    document.addEventListener('keydown',onSpace,true);
+    win._cleanup=()=>{reset();document.removeEventListener('keydown',onSpace,true);};
+    field.onclick=press;
+    function press(){
       if(state==='idle'||state==='done'){
         state='waiting';field.className='reaction-field waiting';
         field.querySelector('strong').textContent='ЖДИ...';
@@ -281,23 +300,23 @@
         if(!old||ms<old){save('reaction-best',String(ms));record.textContent=ms+' мс';}
         if(ms<350)unlock('quick');
       }
-    };
+    }
   }
   function renderStore(root) {
     root.innerHTML='<div class="extra-head"><h2>✧ Магазин приложений</h2><p>Добавляй новые приложения на рабочий стол</p></div><div class="store-list"></div>';
     const list=$('.store-list',root);
-    const descriptions={files:'Создавай и сохраняй текстовые файлы',focus:'Таймер для учёбы и отдыха',achievements:'Открывай награды за действия',reaction:'Проверь скорость своих рефлексов',settings:'Темы, обои и оформление'};
+    const descriptions={hub:'Сводка и быстрый доступ',files:'Создавай и сохраняй текстовые файлы',focus:'Таймер для учёбы и отдыха',achievements:'Открывай награды за действия',reaction:'Проверь скорость своих рефлексов',settings:'Темы, обои и оформление'};
     Object.entries(descriptions).forEach(([id,description])=>{
       const row=document.createElement('div');row.className='store-item';
       const details=document.createElement('div');
       details.innerHTML='<strong>'+appIcons[id]+' '+appNames[id]+'</strong><small>'+description+'</small>';
       const btn=document.createElement('button');btn.className='extra-btn';
       const refresh=()=>{
-        const has=installed().includes(id)||id==='settings';
-        btn.textContent=id==='settings'?'ОТКРЫТЬ':has?'УДАЛИТЬ':'УСТАНОВИТЬ';
+        const has=installed().includes(id)||id==='settings'||id==='hub';
+        btn.textContent=['settings','hub'].includes(id)?'ОТКРЫТЬ':has?'УДАЛИТЬ':'УСТАНОВИТЬ';
       };
       btn.onclick=()=>{
-        if(id==='settings'){openApp(id);return;}
+        if(['settings','hub'].includes(id)){openApp(id);return;}
         const list=installed(),has=list.includes(id);
         persistInstalled(has?list.filter(x=>x!==id):[...list,id]);
         refreshApps();refresh();
