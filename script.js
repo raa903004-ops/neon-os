@@ -57,7 +57,7 @@
     desktop.classList.toggle('light'); const light = desktop.classList.contains('light');
     $('#theme-btn').textContent = light ? '☀' : '☾'; save('neon-theme', light ? 'light' : 'dark'); toast(light ? 'Светлая тема включена' : 'Тёмная тема включена');
   });
-  const names = {terminal:'Терминал',notes:'Заметки',paint:'Пиксель-арт',calc:'Калькулятор',about:'О системе'};
+  const names = {terminal:'Терминал',notes:'Заметки',paint:'Пиксель-арт',calc:'Калькулятор',snake:'Змейка',about:'О системе'};
   function focusWindow(win) {
     $('.window.active')?.classList.remove('active');
     win.classList.add('active'); win.style.zIndex = ++highestZ;
@@ -73,7 +73,7 @@
     win.style.top = `calc(8% + ${offset}px)`;
     win.innerHTML = `<div class="titlebar"><div class="traffic"><button class="close" aria-label="Закрыть"></button><button class="minimize" aria-label="Свернуть"></button><button class="maximize" aria-label="Развернуть"></button></div><div class="window-title">${names[id]}</div></div><div class="window-body"></div>`;
     windows.appendChild(win); apps.set(id, win); focusWindow(win);
-    $('.close',win).addEventListener('click', () => { apps.delete(id); win.remove(); });
+    $('.close',win).addEventListener('click', () => { win._cleanup?.(); apps.delete(id); win.remove(); });
     $('.minimize',win).addEventListener('click', () => { win.classList.add('minimizing'); setTimeout(() => { win.classList.add('hidden'); win.classList.remove('minimizing'); }, 210); });
     $('.maximize',win).addEventListener('click', () => {
       if (win.dataset.maximized === 'true') {
@@ -91,6 +91,7 @@
     if (id === 'notes') createNotes(body);
     if (id === 'paint') createPaint(body);
     if (id === 'calc') createCalc(body);
+    if (id === 'snake') createSnake(body, win);
     if (id === 'about') createAbout(body);
   }
   function makeDraggable(win) {
@@ -121,11 +122,11 @@
     print('Терминал NEON OS [версия 1.1]', 'accent');
     print('Напиши "помощь" или "help", чтобы увидеть команды.\n', 'good');
     const commands = {
-      help: () => 'КОМАНДЫ\n  помощь     Список команд\n  система    Информация о системе\n  дата       Дата и время\n  ктоя       Текущий пользователь\n  список     Все приложения\n  открыть ИМЯ  Запуск приложения\n  эхо ТЕКСТ  Показать текст\n  тема       Сменить оформление\n  очистить   Очистить экран\n  matrix     Секретный эффект\n  secret     Пасхалка',
-      about: () => 'NEON OS v1.1. Сделано на HTML, CSS и JavaScript. Без фреймворков.',
+      help: () => 'КОМАНДЫ\n  помощь     Список команд\n  система    Информация о системе\n  дата       Дата и время\n  ктоя       Текущий пользователь\n  список     Все приложения\n  открыть ИМЯ  Запуск приложения\n  эхо ТЕКСТ  Показать текст\n  тема       Сменить оформление\n  очистить   Очистить экран\n  открыть змейка  Запуск игры\n  matrix     Секретный эффект\n  secret     Пасхалка',
+      about: () => 'NEON OS v1.2. Сделано на HTML, CSS и JavaScript. Без фреймворков.',
       date: () => now().toLocaleString('ru-RU'),
       whoami: () => 'Гость, исследователь NEON OS ✦',
-      ls: () => 'terminal/   notes/   paint/   calc/   about/',
+      ls: () => 'terminal/   notes/   paint/   calc/   snake/   about/',
       matrix: () => Array.from({length:10},()=>Array.from({length:46},()=>Math.random()>.5?'1':'0').join('')).join('\n'),
       secret: () => '✧ ДОСТИЖЕНИЕ ОТКРЫТО ✧\nТы нашёл секрет! Самое время создать что-то крутое.'
     };
@@ -135,7 +136,7 @@
       const [cmd,...args]=raw.split(/\s+/);
       const aliases = { 'помощь':'help','система':'about','дата':'date','ктоя':'whoami','список':'ls','открыть':'open','эхо':'echo','тема':'theme','очистить':'clear' };
       const command = aliases[cmd.toLowerCase()] || cmd.toLowerCase();
-      const appAliases = { 'заметки':'notes','рисование':'paint','рисовалка':'paint','калькулятор':'calc','терминал':'terminal','осистема':'about' };
+      const appAliases = { 'заметки':'notes','рисование':'paint','рисовалка':'paint','калькулятор':'calc','терминал':'terminal','осистема':'about','змейка':'snake' };
       if(args[0]) args[0] = appAliases[args[0].toLowerCase()] || args[0].toLowerCase();
       switch(command) {
         case 'clear': output.replaceChildren(); break;
@@ -214,9 +215,100 @@
       b.addEventListener('click',()=>press(k));keys.appendChild(b);
     });
   }
-  function createAbout(root) {
-    root.innerHTML=`<div class="about-wrap"><div class="about-logo">✦</div><h2>NEON OS <span style="font-size:13px;color:#a79ec9;vertical-align:middle">v1.0</span></h2><p>Мини-операционная система прямо в браузере. Для тех, кому скучно на обычных сайтах.</p><div class="about-stats"><span>HTML</span><span>CSS</span><span>VANILLA JS</span><span>БЕЗ ФРЕЙМВОРКОВ</span></div><p class="hint">✧ Перетаскивай окна мышью<br>✧ Заметки и рисунки сохраняются автоматически<br>✧ Открой терминал и введи <b>помощь</b><br>✧ Попробуй команду <b>secret</b> :)</p></div>`;
+  function createSnake(root, win) {
+    const side = 16;
+    const total = side * side;
+    const directions = { ArrowUp:-side, ArrowDown:side, ArrowLeft:-1, ArrowRight:1, 'ц':-side, 'ы':side, 'ф':-1, 'в':1 };
+    root.innerHTML = `<div class="snake-wrap">
+      <div class="snake-head"><div><strong>◈ НЕОНОВАЯ ЗМЕЙКА</strong><span>Собери как можно больше энергии</span></div><div class="snake-scores"><div>СЧЁТ <b class="snake-score">0</b></div><div>РЕКОРД <b class="snake-best">0</b></div></div></div>
+      <div class="snake-board" role="img" aria-label="Игровое поле змейки"></div>
+      <div class="snake-controls"><button data-snake="ArrowLeft" aria-label="Влево">←</button><button data-snake="ArrowUp" aria-label="Вверх">↑</button><button data-snake="ArrowDown" aria-label="Вниз">↓</button><button data-snake="ArrowRight" aria-label="Вправо">→</button><button class="snake-toggle">НАЧАТЬ ИГРУ</button></div>
+      <p class="snake-help">Управление: стрелки или WASD. Пробел для паузы.</p>
+    </div>`;
+    const board = $('.snake-board',root);
+    const cells = Array.from({length:total}, () => {
+      const cell = document.createElement('div'); cell.className = 'snake-cell'; board.appendChild(cell); return cell;
+    });
+    const scoreEl = $('.snake-score',root), bestEl = $('.snake-best',root), toggle = $('.snake-toggle',root);
+    let best = Number(read('neon-snake-best','0')) || 0;
+    let snake = [120,119,118], food = 200, direction = 1, next = 1, score = 0, running = false, over = false, last = 0;
+    let raf = 0;
+    bestEl.textContent = best;
+    const occupied = () => new Set(snake);
+    function spawnFood() {
+      const used = occupied();
+      const empty = Array.from({length:total},(_,i)=>i).filter(i=>!used.has(i));
+      return empty.length ? empty[Math.floor(Math.random()*empty.length)] : -1;
+    }
+    food = spawnFood();
+    function draw() {
+      cells.forEach((cell,i)=>{
+        cell.className = 'snake-cell';
+        if(i===food) cell.classList.add('snake-food');
+        if(snake.includes(i)) cell.classList.add('snake-body');
+        if(i===snake[0]) cell.classList.add('snake-head-cell');
+      });
+      scoreEl.textContent = score;
+      bestEl.textContent = best;
+      toggle.textContent = over ? 'ЕЩЁ РАЗ' : running ? 'ПАУЗА' : score ? 'ПРОДОЛЖИТЬ' : 'НАЧАТЬ ИГРУ';
+    }
+    function reset() {
+      snake=[120,119,118]; direction=1;next=1;score=0;over=false;food=spawnFood();last=0;
+    }
+    function turn(key) {
+      const map = {w:'ArrowUp',a:'ArrowLeft',s:'ArrowDown',d:'ArrowRight'};
+      const d = directions[map[key.toLowerCase()] || key];
+      if(d===undefined || d===-direction || d===next) return;
+      next=d;
+      if(!running && !over) {running=true;last=0;draw();}
+    }
+    function tick() {
+      direction=next;
+      const head=snake[0], target=head+direction;
+      const wall = target < 0 || target >= total ||
+        (direction===1 && head%side===side-1) ||
+        (direction===-1 && head%side===0);
+      const eat = target===food;
+      const body= eat ? snake : snake.slice(0,-1);
+      if(wall || body.includes(target)) {
+        running=false;over=true;toast('Игра окончена! Счёт: '+score);draw();return;
+      }
+      snake.unshift(target);
+      if(eat) {
+        score++;
+        if(score>best){best=score;save('neon-snake-best',String(best));}
+        food=spawnFood();
+        if(food===-1){running=false;over=true;toast('Победа! Всё поле заполнено!');}
+      } else snake.pop();
+      draw();
+    }
+    function frame(time) {
+      if(!root.isConnected) return;
+      if(running && !win.classList.contains('hidden') && time-last > Math.max(75,155-score*3)) {tick();last=time;}
+      raf=requestAnimationFrame(frame);
+    }
+    function toggleGame() {
+      if(over) {reset();running=true;}
+      else running=!running;
+      last=0;draw();
+    }
+    toggle.addEventListener('click',toggleGame);
+    root.querySelectorAll('[data-snake]').forEach(b=>b.addEventListener('click',()=>turn(b.dataset.snake)));
+    const keyHandler=e=>{
+      if(!win.isConnected || win.classList.contains('hidden') || !win.classList.contains('active')) return;
+      if(['INPUT','TEXTAREA'].includes(document.activeElement?.tagName)) return;
+      if(e.code==='Space') {e.preventDefault();toggleGame();return;}
+      const key = e.key==='ц'?'w':e.key==='ф'?'a':e.key==='ы'?'s':e.key==='в'?'d':e.key;
+      if(directions[key]!==undefined || ['w','a','s','d','W','A','S','D'].includes(key)) {e.preventDefault();turn(key);}
+    };
+    document.addEventListener('keydown',keyHandler);
+    win._cleanup=()=>{cancelAnimationFrame(raf);document.removeEventListener('keydown',keyHandler);};
+    draw();
+    raf=requestAnimationFrame(frame);
   }
-  window.addEventListener('keydown',e=>{if(e.key==='Escape'){const win=[...apps.values()].filter(w=>!w.classList.contains('hidden')).sort((a,b)=>Number(b.style.zIndex)-Number(a.style.zIndex))[0];if(win){apps.delete(win.dataset.app);win.remove();}}});
+  function createAbout(root) {
+    root.innerHTML=`<div class="about-wrap"><div class="about-logo">✦</div><h2>NEON OS <span style="font-size:13px;color:#a79ec9;vertical-align:middle">v1.0</span></h2><p>Мини-операционная система прямо в браузере. Для тех, кому скучно на обычных сайтах.</p><div class="about-stats"><span>HTML</span><span>CSS</span><span>VANILLA JS</span><span>БЕЗ ФРЕЙМВОРКОВ</span></div><p class="hint">✧ Перетаскивай окна мышью<br>✧ Заметки и рисунки сохраняются автоматически<br>✧ Открой терминал и введи <b>помощь</b><br>✧ Сыграй в <b>Змейку</b> и побей свой рекорд<br>✧ Попробуй команду <b>secret</b> :)</p></div>`;
+  }
+  window.addEventListener('keydown',e=>{if(e.key==='Escape'){const win=[...apps.values()].filter(w=>!w.classList.contains('hidden')).sort((a,b)=>Number(b.style.zIndex)-Number(a.style.zIndex))[0];if(win){apps.delete(win.dataset.app);win._cleanup?.();apps.delete(win.dataset.app);win.remove();}}});
   setTimeout(()=>{$('#boot').remove();desktop.classList.remove('hidden');},950);
 })();
