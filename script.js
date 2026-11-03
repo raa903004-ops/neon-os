@@ -61,7 +61,7 @@
   function focusWindow(win) {
     $('.window.active')?.classList.remove('active');
     win.classList.add('active'); win.style.zIndex = ++highestZ;
-    if (win.dataset.app === 'terminal') $('.term-form input', win)?.focus();
+    if (win.dataset.app === 'terminal' && !win.contains(document.activeElement)) $('.term-form input', win)?.focus();
   }
   function openApp(id) {
     if (!names[id]) return;
@@ -84,7 +84,7 @@
       }
       focusWindow(win);
     });
-    win.addEventListener('pointerdown', () => focusWindow(win));
+    win.addEventListener('pointerdown', ev => { if (ev.target.closest('input,textarea,button')) { win.style.zIndex = ++highestZ; return; } focusWindow(win); });
     makeDraggable(win);
     const body = $('.window-body',win);
     if (id === 'terminal') createTerminal(body);
@@ -115,11 +115,12 @@
   $('#explore').addEventListener('click', () => openApp('terminal'));
   $('#launcher').addEventListener('click', () => openApp('about'));
   function createTerminal(root) {
-    root.innerHTML = `<div class="terminal"><div class="term-output" role="log"></div><form class="term-form" autocomplete="off"><label for="terminal-input">guest@neon:~$</label><input id="terminal-input" aria-label="Введите команду" spellcheck="false" autocomplete="off"></form></div>`;
+    root.innerHTML = `<div class="terminal"><div class="term-output" role="log"></div><form class="term-form" autocomplete="off"><label for="terminal-input">guest@neon:~$</label><input id="terminal-input" aria-label="Введите команду" placeholder="Введи команду..." spellcheck="false" autocomplete="off" autocapitalize="off"></form></div>`;
     const output = $('.term-output',root), input = $('.term-form input',root);
+    $('.terminal',root).addEventListener('click',event=>{if(!event.target.closest('button,input,a')) input.focus();});
     let history = [], cursor = 0;
     const print = (content, cls='') => { const line = document.createElement('div'); line.className=cls; line.textContent=content; output.appendChild(line); output.scrollTop=output.scrollHeight; };
-    print('Терминал NEON OS [версия 1.1]', 'accent');
+    print('Терминал NEON OS [версия 2.2]', 'accent');
     print('Напиши "помощь" или "help", чтобы увидеть команды.\n', 'good');
     const commands = {
       help: () => 'КОМАНДЫ\n  помощь     Список команд\n  система    Информация о системе\n  дата       Дата и время\n  ктоя       Текущий пользователь\n  список     Все приложения\n  открыть ИМЯ  Запуск приложения\n  эхо ТЕКСТ  Показать текст\n  тема       Сменить оформление\n  очистить   Очистить экран\n  открыть змейка  Запуск игры\n  matrix     Секретный эффект\n  secret     Пасхалка',
@@ -131,7 +132,7 @@
       secret: () => '✧ ДОСТИЖЕНИЕ ОТКРЫТО ✧\nТы нашёл секрет! Самое время создать что-то крутое.'
     };
     $('.term-form',root).addEventListener('submit', e => {
-      e.preventDefault(); const raw=input.value.trim(); input.value=''; if(!raw) return;
+      e.preventDefault(); const raw=input.value.trim(); input.value=''; if(!raw) {input.focus(); return;}
       print('guest@neon:~$ '+raw); history.push(raw); cursor=history.length;
       const [cmd,...args]=raw.split(/\s+/);
       const aliases = { 'помощь':'help','система':'about','дата':'date','ктоя':'whoami','список':'ls','открыть':'open','эхо':'echo','тема':'theme','очистить':'clear' };
@@ -146,6 +147,7 @@
         default: if(commands[command]) print(commands[command](),command==='secret'?'good':'');
         else print(`Неизвестная команда: ${cmd} Введи "помощь".`, 'error');
       }
+      input.focus();
     });
     input.addEventListener('keydown', e => {
       if(e.key==='ArrowUp') {e.preventDefault();cursor=Math.max(0,cursor-1);input.value=history[cursor]??'';}
