@@ -2,28 +2,28 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#090b18">
-<title>NEON OS — Your browser, your universe.</title>
+<title>NEON OS | Твоя вселенная</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div id="boot" aria-live="polite"><div class="boot-mark">N<span>✦</span></div><div>NEON OS <small>v1.0</small></div><div class="boot-bar"><i></i></div><p>Initializing your universe...</p></div>
+<div id="boot" aria-live="polite"><div class="boot-mark">N<span>✦</span></div><div>NEON OS <small>v1.0</small></div><div class="boot-bar"><i></i></div><p>Загружаем твою вселенную...</p></div>
 <div id="desktop" class="hidden">
-  <div class="wallpaper-art"><div class="orb orb-a"></div><div class="orb orb-b"></div><div class="grid-lines"></div></div>
-  <header class="topbar"><div class="brand">✦ <strong>NEON</strong> OS <span class="top-version">1.0</span></div><span class="top-hint">YOUR SPACE. YOUR RULES.</span><div class="clock"><span id="date"></span> <strong id="clock"></strong></div></header>
+  <div class="wallpaper-art"><div class="orb orb-a"></div><div class="orb orb-b"></div><div class="grid-lines"></div><div class="stars" aria-hidden="true"></div><div class="aurora aurora-a"></div><div class="aurora aurora-b"></div><div class="cursor-glow" aria-hidden="true"></div></div>
+  <header class="topbar"><div class="brand">✦ <strong>NEON</strong> OS <span class="top-version">1.0</span></div><span class="top-hint">ТВОЙ МИР. ТВОИ ПРАВИЛА.</span><div class="clock"><span id="date"></span> <strong id="clock"></strong></div></header>
   <main id="workspace" aria-label="Рабочий стол">
     <div class="desktop-icons">
-      <button class="desktop-icon" data-open="terminal"><span class="icon-tile terminal-icon">›_</span><span>Terminal</span></button>
-      <button class="desktop-icon" data-open="notes"><span class="icon-tile notes-icon">▤</span><span>Notes</span></button>
-      <button class="desktop-icon" data-open="paint"><span class="icon-tile paint-icon">✎</span><span>Pixel Art</span></button>
-      <button class="desktop-icon" data-open="calc"><span class="icon-tile calc-icon">＋</span><span>Calculator</span></button>
-      <button class="desktop-icon" data-open="about"><span class="icon-tile about-icon">✦</span><span>About</span></button>
+      <button class="desktop-icon" data-open="terminal"><span class="icon-tile terminal-icon">›_</span><span>Терминал</span></button>
+      <button class="desktop-icon" data-open="notes"><span class="icon-tile notes-icon">▤</span><span>Заметки</span></button>
+      <button class="desktop-icon" data-open="paint"><span class="icon-tile paint-icon">✎</span><span>Пиксель-арт</span></button>
+      <button class="desktop-icon" data-open="calc"><span class="icon-tile calc-icon">＋</span><span>Калькулятор</span></button>
+      <button class="desktop-icon" data-open="about"><span class="icon-tile about-icon">✦</span><span>О системе</span></button>
     </div>
-    <div class="hero-copy"><div class="hero-tag">✧ WELCOME TO YOUR DESKTOP</div><h1>MAKE YOUR<br><em>OWN WORLD.</em></h1><p>Explore. Create. Break things.<br>It's all yours.</p><button id="explore" class="hero-btn">OPEN TERMINAL <span>↗</span></button></div>
-    <div id="windows" aria-live="polite"></div>
+    <div class="hero-copy"><div class="hero-tag">✧ ДОБРО ПОЖАЛОВАТЬ В NEON OS</div><h1>СОЗДАЙ<br><em>СВОЙ МИР.</em></h1><p>Исследуй. Твори. Экспериментируй.<br>Здесь всё зависит от тебя.</p><button id="explore" class="hero-btn">ОТКРЫТЬ ТЕРМИНАЛ <span>↗</span></button></div>
+    <div class="status-chip" aria-hidden="true"><span class="status-dot"></span> СИСТЕМА АКТИВНА</div><div id="windows" aria-live="polite"></div>
   </main>
   <nav class="dock" aria-label="Приложения">
     <button id="launcher" class="dock-home" title="Приложения">✦</button><div class="dock-divider"></div>
-    <button data-open="terminal" title="Terminal">›_</button><button data-open="notes" title="Notes">▤</button><button data-open="paint" title="Pixel Art">✎</button><button data-open="calc" title="Calculator">＋</button><button data-open="about" title="About">ⓘ</button>
+    <button data-open="terminal" title="Терминал">›_</button><button data-open="notes" title="Заметки">▤</button><button data-open="paint" title="Пиксель-арт">✎</button><button data-open="calc" title="Калькулятор">＋</button><button data-open="about" title="О системе">ⓘ</button>
     <div class="dock-divider"></div><button id="theme-btn" title="Сменить тему">☾</button>
   </nav>
   <div id="toast" role="status" aria-live="polite"></div>
