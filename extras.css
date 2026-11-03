@@ -53,3 +53,11 @@
 .light .file-open{color:#1c3154}
 #desktop .extra-content input,#desktop .extra-content textarea,#desktop .extra-content .file-open,#desktop .extra-content .extra-empty,#desktop .extra-content .file-row,#desktop .extra-content .achievement-item,#desktop .extra-content .store-item{user-select:text;-webkit-user-select:text}
 @media(max-width:700px){.extra-window{left:3%!important;top:3%!important;width:94%!important;height:calc(100dvh - 145px)!important}.extra-window .extra-content{padding:13px}.wallpaper-options{grid-template-columns:repeat(2,minmax(0,1fr))}.reaction-field{height:180px}.reaction-field strong{font-size:22px}.store-item{padding:9px}.store-item .extra-btn{font-size:9px;padding:8px}}
+
+.quick-search{border:1px solid #536284;background:#ffffff0e;border-radius:9px;color:#d6dff2;padding:8px 13px;font:12px 'DM Mono',monospace;cursor:pointer}
+.quick-search span{display:inline-block;margin-left:20px;padding:3px 5px;background:#ffffff17;border-radius:4px;color:#a6b7d5;font-size:10px}
+.quick-search:hover{background:#ffffff22}
+.dock{max-width:calc(100vw - 20px);overflow-x:auto;scrollbar-width:none}
+.dock::-webkit-scrollbar{display:none}
+.dock .extra-dock{flex-shrink:0}
+@media(max-width:700px){.quick-search span{display:none}.quick-search{padding:7px 9px}.dock{justify-content:flex-start;left:50%;max-width:calc(100vw - 10px)}.dock button{flex-shrink:0}}
