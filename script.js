@@ -7,6 +7,37 @@
   let toastTimer;
   const $ = (s, root = document) => root.querySelector(s);
   const now = () => new Date();
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function sparkle(x, y) {
+    if (reduceMotion) return;
+    const node = document.createElement('span');
+    node.className = 'click-spark';
+    node.style.left = x + 'px'; node.style.top = y + 'px';
+    document.body.appendChild(node);
+    setTimeout(() => node.remove(), 650);
+  }
+  document.addEventListener('pointerdown', ev => sparkle(ev.clientX, ev.clientY));
+  if (!reduceMotion && matchMedia('(pointer:fine)').matches) {
+    const glow = document.querySelector('.cursor-glow');
+    let previous = 0;
+    document.addEventListener('pointermove', ev => {
+      const time = performance.now();
+      if(time - previous < 20) return;
+      previous = time;
+      if(glow){glow.style.setProperty('--cursor-x', ev.clientX + 'px');glow.style.setProperty('--cursor-y', ev.clientY + 'px');}
+    }, {passive:true});
+  }
+  const stars = document.querySelector('.stars');
+  if (stars && !reduceMotion) {
+    for (let i = 0; i < 42; i++) {
+      const star = document.createElement('i');
+      star.style.left = ((i * 67.13) % 100) + '%';
+      star.style.top = ((i * 43.71 + 7) % 100) + '%';
+      star.style.animationDelay = ((i * 0.41) % 6) + 's';
+      star.style.animationDuration = (2.5 + i % 5) + 's';
+      stars.appendChild(star);
+    }
+  }
   const escapeHtml = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const read = (key, fallback = '') => { try { return localStorage.getItem(key) ?? fallback; } catch { return fallback; } };
   const save = (key, value) => { try { localStorage.setItem(key, value); return true; } catch { return false; } };
@@ -24,9 +55,9 @@
   $('#theme-btn').textContent = desktop.classList.contains('light') ? '☀' : '☾';
   $('#theme-btn').addEventListener('click', () => {
     desktop.classList.toggle('light'); const light = desktop.classList.contains('light');
-    $('#theme-btn').textContent = light ? '☀' : '☾'; save('neon-theme', light ? 'light' : 'dark'); toast(light ? 'Light mode enabled' : 'Dark mode enabled');
+    $('#theme-btn').textContent = light ? '☀' : '☾'; save('neon-theme', light ? 'light' : 'dark'); toast(light ? 'Светлая тема включена' : 'Тёмная тема включена');
   });
-  const names = {terminal:'Terminal',notes:'My Notes',paint:'Pixel Art Studio',calc:'Calculator',about:'About NEON OS'};
+  const names = {terminal:'Терминал',notes:'Заметки',paint:'Пиксель-арт',calc:'Калькулятор',about:'О системе'};
   function focusWindow(win) {
     $('.window.active')?.classList.remove('active');
     win.classList.add('active'); win.style.zIndex = ++highestZ;
@@ -34,7 +65,7 @@
   }
   function openApp(id) {
     if (!names[id]) return;
-    if (apps.has(id)) { const existing = apps.get(id); existing.classList.remove('hidden'); focusWindow(existing); return; }
+    if (apps.has(id)) { const existing = apps.get(id); existing.classList.remove('hidden','minimizing'); existing.classList.add('restoring'); setTimeout(() => existing.classList.remove('restoring'), 330); focusWindow(existing); return; }
     const win = document.createElement('section');
     win.className = 'window'; win.dataset.app = id; win.setAttribute('aria-label', names[id]);
     const offset = apps.size * 27;
@@ -43,7 +74,7 @@
     win.innerHTML = `<div class="titlebar"><div class="traffic"><button class="close" aria-label="Закрыть"></button><button class="minimize" aria-label="Свернуть"></button><button class="maximize" aria-label="Развернуть"></button></div><div class="window-title">${names[id]}</div></div><div class="window-body"></div>`;
     windows.appendChild(win); apps.set(id, win); focusWindow(win);
     $('.close',win).addEventListener('click', () => { apps.delete(id); win.remove(); });
-    $('.minimize',win).addEventListener('click', () => win.classList.add('hidden'));
+    $('.minimize',win).addEventListener('click', () => { win.classList.add('minimizing'); setTimeout(() => { win.classList.add('hidden'); win.classList.remove('minimizing'); }, 210); });
     $('.maximize',win).addEventListener('click', () => {
       if (win.dataset.maximized === 'true') {
         win.style.cssText = win.dataset.oldStyle; win.dataset.maximized = 'false';
@@ -87,28 +118,32 @@
     const output = $('.term-output',root), input = $('.term-form input',root);
     let history = [], cursor = 0;
     const print = (content, cls='') => { const line = document.createElement('div'); line.className=cls; line.textContent=content; output.appendChild(line); output.scrollTop=output.scrollHeight; };
-    print('NEON OS Terminal [Version 1.0]', 'accent');
-    print('Type "help" to see all commands.\n', 'good');
+    print('Терминал NEON OS [версия 1.1]', 'accent');
+    print('Напиши "помощь" или "help", чтобы увидеть команды.\n', 'good');
     const commands = {
-      help: () => 'AVAILABLE COMMANDS\n  help       List commands\n  about      System details\n  date       Current date and time\n  whoami     Who are you?\n  ls         List apps\n  open NAME  Launch an app (notes, paint, calc)\n  echo TEXT  Print text\n  theme      Switch light/dark\n  clear      Clear the terminal\n  matrix     ???\n  secret     ???',
-      about: () => 'NEON OS v1.0 — built with vanilla HTML, CSS and JavaScript. No frameworks. No limits.',
+      help: () => 'КОМАНДЫ\n  помощь     Список команд\n  система    Информация о системе\n  дата       Дата и время\n  ктоя       Текущий пользователь\n  список     Все приложения\n  открыть ИМЯ  Запуск приложения\n  эхо ТЕКСТ  Показать текст\n  тема       Сменить оформление\n  очистить   Очистить экран\n  matrix     Секретный эффект\n  secret     Пасхалка',
+      about: () => 'NEON OS v1.1. Сделано на HTML, CSS и JavaScript. Без фреймворков.',
       date: () => now().toLocaleString('ru-RU'),
-      whoami: () => 'guest — creative explorer of NEON OS ✦',
+      whoami: () => 'Гость, исследователь NEON OS ✦',
       ls: () => 'terminal/   notes/   paint/   calc/   about/',
       matrix: () => Array.from({length:10},()=>Array.from({length:46},()=>Math.random()>.5?'1':'0').join('')).join('\n'),
-      secret: () => '✧ ACHIEVEMENT UNLOCKED ✧\nYou found the secret. Build something impossible today!'
+      secret: () => '✧ ДОСТИЖЕНИЕ ОТКРЫТО ✧\nТы нашёл секрет! Самое время создать что-то крутое.'
     };
     $('.term-form',root).addEventListener('submit', e => {
       e.preventDefault(); const raw=input.value.trim(); input.value=''; if(!raw) return;
       print('guest@neon:~$ '+raw); history.push(raw); cursor=history.length;
       const [cmd,...args]=raw.split(/\s+/);
-      switch(cmd.toLowerCase()) {
+      const aliases = { 'помощь':'help','система':'about','дата':'date','ктоя':'whoami','список':'ls','открыть':'open','эхо':'echo','тема':'theme','очистить':'clear' };
+      const command = aliases[cmd.toLowerCase()] || cmd.toLowerCase();
+      const appAliases = { 'заметки':'notes','рисование':'paint','рисовалка':'paint','калькулятор':'calc','терминал':'terminal','осистема':'about' };
+      if(args[0]) args[0] = appAliases[args[0].toLowerCase()] || args[0].toLowerCase();
+      switch(command) {
         case 'clear': output.replaceChildren(); break;
         case 'echo': print(args.join(' ')); break;
-        case 'open': if(names[args[0]]) {openApp(args[0]);print('Launching '+args[0]+'...','good');} else print('Unknown app. Try: ls','error'); break;
-        case 'theme': $('#theme-btn').click();print('Theme switched.','good');break;
-        default: if(commands[cmd.toLowerCase()]) print(commands[cmd.toLowerCase()](),cmd==='secret'?'good':'');
-        else print(`Command not found: ${cmd}. Type "help".`, 'error');
+        case 'open': if(names[args[0]]) {openApp(args[0]);print('Запускаю '+args[0]+'...','good');} else print('Неизвестное приложение. Введи: список','error'); break;
+        case 'theme': $('#theme-btn').click();print('Тема изменена.','good');break;
+        default: if(commands[command]) print(commands[command](),command==='secret'?'good':'');
+        else print(`Неизвестная команда: ${cmd} Введи "помощь".`, 'error');
       }
     });
     input.addEventListener('keydown', e => {
@@ -118,24 +153,24 @@
     input.focus();
   }
   function createNotes(root) {
-    root.innerHTML = `<div class="notes-wrap"><div class="section-head"><h2>✎ Scratchpad</h2><span class="small-label">AUTO-SAVE ON</span></div><textarea aria-label="Ваши заметки" placeholder="Your ideas belong here... ✨"></textarea><footer><span class="note-count">0 characters</span><button class="pill" type="button">COPY TEXT</button></footer></div>`;
+    root.innerHTML = `<div class="notes-wrap"><div class="section-head"><h2>✎ Мои заметки</h2><span class="small-label">АВТОСОХРАНЕНИЕ</span></div><textarea aria-label="Ваши заметки" placeholder="Запиши свои идеи здесь... ✨"></textarea><footer><span class="note-count">0 символов</span><button class="pill" type="button">КОПИРОВАТЬ</button></footer></div>`;
     const textarea = $('textarea',root), count=$('.note-count',root);
     textarea.value = read('neon-notes');
-    const refresh=()=>{ count.textContent=`${textarea.value.length} characters`; };
+    const refresh=()=>{ count.textContent=`${textarea.value.length} символов`; };
     refresh();textarea.addEventListener('input',()=>{save('neon-notes',textarea.value);refresh();});
     $('.pill',root).addEventListener('click',async()=>{
-      try { await navigator.clipboard.writeText(textarea.value);toast('Notes copied!'); }
-      catch {textarea.select();toast('Select text and copy it');}
+      try { await navigator.clipboard.writeText(textarea.value);toast('Текст скопирован!'); }
+      catch {textarea.select();toast('Выдели текст и скопируй его');}
     });
   }
   function createPaint(root) {
     const colors=['#131b2f','#fcfcff','#ff698d','#ffbd69','#ffe782','#6ae6b4','#54caf0','#a68aff','#e68ccf'];
-    root.innerHTML=`<div class="paint-wrap"><div class="section-head"><h2>Pixel Art Studio</h2><span class="small-label">20 × 14 GRID</span></div><div class="paint-tools"><span class="small-label">COLOR</span><div class="palette" style="display:flex;gap:6px;flex-wrap:wrap"></div><button class="pill erase">ERASER</button><button class="pill clear-art">CLEAR</button><button class="pill save-art">SAVE PNG ↓</button></div><div class="paint-stage"><div class="paint-grid" role="grid" aria-label="Рисование по пикселям"></div></div><div class="paint-meta">TIP: Hold and drag to draw • Your art is saved automatically</div></div>`;
+    root.innerHTML=`<div class="paint-wrap"><div class="section-head"><h2>Пиксель-арт</h2><span class="small-label">СЕТКА 20 × 14</span></div><div class="paint-tools"><span class="small-label">ЦВЕТ</span><div class="palette" style="display:flex;gap:6px;flex-wrap:wrap"></div><button class="pill erase">ЛАСТИК</button><button class="pill clear-art">ОЧИСТИТЬ</button><button class="pill save-art">СОХРАНИТЬ PNG ↓</button></div><div class="paint-stage"><div class="paint-grid" role="grid" aria-label="Рисование по пикселям"></div></div><div class="paint-meta">Зажми кнопку и веди курсор. Рисунок сохраняется автоматически.</div></div>`;
     const palette=$('.palette',root), grid=$('.paint-grid',root);
     let selected=2, painting=false;
     let pixels; try {const stored=JSON.parse(read('neon-pixels','null'));pixels=Array.isArray(stored)&&stored.length===280?stored: Array(280).fill(0);}catch{pixels=Array(280).fill(0);}
     const chooseColor=i=>{selected=i;palette.querySelectorAll('button').forEach((b,index)=>b.classList.toggle('selected',index===i));};
-    colors.forEach((color,i)=>{const b=document.createElement('button');b.className='swatch';b.style.background=color;b.title='Color '+(i+1);b.setAttribute('aria-label','Цвет '+(i+1));b.addEventListener('click',()=>chooseColor(i));palette.appendChild(b);});
+    colors.forEach((color,i)=>{const b=document.createElement('button');b.className='swatch';b.style.background=color;b.title='Цвет '+(i+1);b.setAttribute('aria-label','Цвет '+(i+1));b.addEventListener('click',()=>chooseColor(i));palette.appendChild(b);});
     chooseColor(selected);
     const cells=pixels.map((value,index)=>{ const cell=document.createElement('div');cell.className='pixel';cell.dataset.index=index;cell.style.background=colors[value]||colors[0];grid.appendChild(cell);return cell;});
     function draw(el){if(!el?.classList.contains('pixel'))return;const i=Number(el.dataset.index);pixels[i]=selected;el.style.background=colors[selected];save('neon-pixels',JSON.stringify(pixels));}
@@ -143,11 +178,11 @@
     grid.addEventListener('pointermove', e=>{if(!painting)return;const el=document.elementFromPoint(e.clientX,e.clientY);draw(el);});
     grid.addEventListener('pointerup',()=>painting=false);grid.addEventListener('pointercancel',()=>painting=false);
     $('.erase',root).addEventListener('click',()=>chooseColor(0));
-    $('.clear-art',root).addEventListener('click',()=>{pixels.fill(0);cells.forEach(c=>c.style.background=colors[0]);save('neon-pixels',JSON.stringify(pixels));toast('Canvas cleared');});
+    $('.clear-art',root).addEventListener('click',()=>{pixels.fill(0);cells.forEach(c=>c.style.background=colors[0]);save('neon-pixels',JSON.stringify(pixels));toast('Рисунок очищен');});
     $('.save-art',root).addEventListener('click',()=>{
       const canvas=document.createElement('canvas');canvas.width=600;canvas.height=420;
       const ctx=canvas.getContext('2d');pixels.forEach((p,i)=>{ctx.fillStyle=colors[p]||colors[0];ctx.fillRect((i%20)*30,Math.floor(i/20)*30,30,30);});
-      const a=document.createElement('a');a.download='neon-pixel-art.png';a.href=canvas.toDataURL('image/png');a.click();toast('PNG exported!');
+      const a=document.createElement('a');a.download='neon-pixel-art.png';a.href=canvas.toDataURL('image/png');a.click();toast('PNG сохранён!');
     });
   }
   function createCalc(root) {
@@ -180,7 +215,7 @@
     });
   }
   function createAbout(root) {
-    root.innerHTML=`<div class="about-wrap"><div class="about-logo">✦</div><h2>NEON OS <span style="font-size:13px;color:#a79ec9;vertical-align:middle">v1.0</span></h2><p>A tiny operating system living in your browser. Made for explorers, builders and people who think normal websites are boring.</p><div class="about-stats"><span>HTML</span><span>CSS</span><span>VANILLA JS</span><span>NO FRAMEWORKS</span></div><p class="hint">✧ Drag windows around<br>✧ Notes & pixel art save automatically<br>✧ Open Terminal and type <b>help</b><br>✧ Try the <b>secret</b> command :)</p></div>`;
+    root.innerHTML=`<div class="about-wrap"><div class="about-logo">✦</div><h2>NEON OS <span style="font-size:13px;color:#a79ec9;vertical-align:middle">v1.0</span></h2><p>Мини-операционная система прямо в браузере. Для тех, кому скучно на обычных сайтах.</p><div class="about-stats"><span>HTML</span><span>CSS</span><span>VANILLA JS</span><span>БЕЗ ФРЕЙМВОРКОВ</span></div><p class="hint">✧ Перетаскивай окна мышью<br>✧ Заметки и рисунки сохраняются автоматически<br>✧ Открой терминал и введи <b>помощь</b><br>✧ Попробуй команду <b>secret</b> :)</p></div>`;
   }
   window.addEventListener('keydown',e=>{if(e.key==='Escape'){const win=[...apps.values()].filter(w=>!w.classList.contains('hidden')).sort((a,b)=>Number(b.style.zIndex)-Number(a.style.zIndex))[0];if(win){apps.delete(win.dataset.app);win.remove();}}});
   setTimeout(()=>{$('#boot').remove();desktop.classList.remove('hidden');},950);
