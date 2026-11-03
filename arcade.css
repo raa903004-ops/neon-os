@@ -1,0 +1,42 @@
+
+.arcade-window{width:min(560px,calc(100vw - 130px));height:min(670px,calc(100dvh - 135px));min-height:400px}
+.arcade-body{padding:19px 23px 18px;background:radial-gradient(circle at 50% 0,#223354,#11192e 60%);color:#eaf1ff;display:flex;flex-direction:column;align-items:center;gap:18px;overflow:auto}
+.arcade-top{width:min(100%,430px);display:flex;align-items:center;justify-content:space-between;gap:14px}
+.arcade-eyebrow{font:10px 'DM Mono',monospace;letter-spacing:.1em;color:#80e9c6!important;margin:0 0 8px!important}
+.arcade-top h2{margin:0 0 5px;font-size:29px;letter-spacing:-.055em}
+.arcade-top h2 span{color:#a995fe}
+.arcade-top p{margin:0;color:#aabed9;font-size:12px}
+.arcade-score{background:#1e2d48;border:1px solid #405477;border-radius:11px;min-width:89px;padding:8px 13px;text-align:center}
+.arcade-score small{display:block;color:#96b0d1;font:9px 'DM Mono',monospace;letter-spacing:.04em}
+.arcade-score b,.arcade-score strong{display:block;color:#fff;font-size:21px;margin:3px 0}
+.board2048{width:min(100%,390px,calc(100dvh - 300px));aspect-ratio:1;display:grid;grid-template-columns:repeat(4,1fr);gap:9px;background:#34415e;padding:10px;border-radius:14px;touch-action:none;box-shadow:0 12px 36px #0005}
+.tile2048{min-width:0;min-height:0;display:flex;align-items:center;justify-content:center;border-radius:9px;background:#23314b;color:#132034;font-size:clamp(20px,3.2vw,37px);font-weight:700;letter-spacing:-.06em;transition:background .13s,color .13s}
+.tile2048.filled{animation:tile-pop .15s ease-out}
+.tile2048[data-value="2"]{background:#e4f7f0}.tile2048[data-value="4"]{background:#bbeddc}.tile2048[data-value="8"]{background:#78d7c8}.tile2048[data-value="16"]{background:#83c5e8}.tile2048[data-value="32"]{background:#a7a5f9}.tile2048[data-value="64"]{background:#d69bf6}.tile2048[data-value="128"]{background:#f4bbdb}.tile2048[data-value="256"]{background:#f3d68c}.tile2048[data-value="512"]{background:#f5b980}.tile2048[data-value="1024"]{background:#f9a87a}.tile2048[data-value="2048"]{background:#fff0ac}
+@keyframes tile-pop{from{transform:scale(.91)}to{transform:scale(1)}}
+.arcade-actions{display:flex;align-items:center;gap:14px;justify-content:space-between;width:min(100%,430px)}
+.arcade-reset{border:0;border-radius:9px;background:#ad9eff;color:#17152c;font:700 12px 'DM Mono',monospace;padding:12px 17px;transition:transform .2s,filter .2s}
+.arcade-reset:hover{transform:translateY(-2px);filter:brightness(1.12)}
+.arcade-actions span{font:11px 'DM Mono',monospace;color:#9caecb}
+.arcade-status{font:12px 'DM Mono',monospace;color:#99edcf;text-align:center;min-height:18px}
+.memory-board{width:min(100%,390px,calc(100dvh - 300px));aspect-ratio:1;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;perspective:900px}
+.memory-card{position:relative;border:1px solid #4d567e;border-radius:11px;background:linear-gradient(135deg,#3c4c78,#322f66);font-size:28px;color:#cabdff;display:grid;place-items:center;transition:transform .24s,background .24s;min-height:0;min-width:0}
+.memory-card:hover{transform:translateY(-2px)}
+.memory-front,.memory-back{position:absolute;inset:0;display:grid;place-items:center}
+.memory-back{opacity:0;transform:scale(.7);transition:.22s}
+.memory-front{opacity:1;transition:.22s}
+.memory-card.revealed,.memory-card.matched{background:linear-gradient(135deg,#bfeee0,#92b6ea);color:#223257}
+.memory-card.revealed .memory-front,.memory-card.matched .memory-front{opacity:0;transform:scale(.7)}
+.memory-card.revealed .memory-back,.memory-card.matched .memory-back{opacity:1;transform:scale(1)}
+.memory-card.matched{background:linear-gradient(135deg,#c6f9ce,#82d9ba);border-color:#9bf6c1}
+.game-2048{background:linear-gradient(140deg,#edbf82,#aa7a53);color:#fff6df}
+.game-memory{background:linear-gradient(140deg,#ec9bc9,#8768d6);color:#fff}
+.desktop-icons .desktop-icon.icon-moved{position:absolute!important;z-index:8;animation:none!important;transition:background .18s,border-color .18s,box-shadow .18s}
+.desktop-icons .desktop-icon.icon-moved:hover{transform:scale(1.04)}
+.desktop-icons .desktop-icon.dragging{z-index:40!important;box-shadow:0 14px 32px #0005;background:#ffffff1e;transform:scale(1.06);cursor:grabbing}
+.desktop-icons .desktop-icon{touch-action:pan-y}
+.light .arcade-body{background:radial-gradient(circle at top,#e4ecff,#cdd8f1);color:#253552}
+.light .arcade-top p,.light .arcade-actions span{color:#526784}
+.light .arcade-score{background:#f0f5ff}.light .arcade-score b,.light .arcade-score strong{color:#263554}
+@media(max-width:700px){.arcade-window{left:3%!important;top:3%!important;width:94%!important;height:calc(100dvh - 145px)!important}.arcade-body{padding:13px;gap:13px}.board2048,.memory-board{width:min(100%,340px,calc(100dvh - 290px))}.arcade-top h2{font-size:24px}.arcade-actions span{font-size:10px}.desktop-icons .desktop-icon.icon-moved{position:static!important}}
+@media(prefers-reduced-motion:reduce){.memory-card,.memory-back,.memory-front{transition:none}.tile2048.filled{animation:none}}
