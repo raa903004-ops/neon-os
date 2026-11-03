@@ -307,8 +307,8 @@
     raf=requestAnimationFrame(frame);
   }
   function createAbout(root) {
-    root.innerHTML=`<div class="about-wrap"><div class="about-logo">✦</div><h2>NEON OS <span style="font-size:13px;color:#a79ec9;vertical-align:middle">v1.0</span></h2><p>Мини-операционная система прямо в браузере. Для тех, кому скучно на обычных сайтах.</p><div class="about-stats"><span>HTML</span><span>CSS</span><span>VANILLA JS</span><span>БЕЗ ФРЕЙМВОРКОВ</span></div><p class="hint">✧ Перетаскивай окна мышью<br>✧ Заметки и рисунки сохраняются автоматически<br>✧ Открой терминал и введи <b>помощь</b><br>✧ Сыграй в <b>Змейку</b> и побей свой рекорд<br>✧ Попробуй команду <b>secret</b> :)</p></div>`;
+    root.innerHTML=`<div class="about-wrap"><div class="about-logo">✦</div><h2>NEON OS <span style="font-size:13px;color:#a79ec9;vertical-align:middle">v1.2</span></h2><p>Мини-операционная система прямо в браузере. Для тех, кому скучно на обычных сайтах.</p><div class="about-stats"><span>HTML</span><span>CSS</span><span>VANILLA JS</span><span>БЕЗ ФРЕЙМВОРКОВ</span></div><p class="hint">✧ Перетаскивай окна мышью<br>✧ Заметки и рисунки сохраняются автоматически<br>✧ Открой терминал и введи <b>помощь</b><br>✧ Сыграй в <b>Змейку</b> и побей свой рекорд<br>✧ Попробуй команду <b>secret</b> :)</p></div>`;
   }
-  window.addEventListener('keydown',e=>{if(e.key==='Escape'){const win=[...apps.values()].filter(w=>!w.classList.contains('hidden')).sort((a,b)=>Number(b.style.zIndex)-Number(a.style.zIndex))[0];if(win){apps.delete(win.dataset.app);win._cleanup?.();apps.delete(win.dataset.app);win.remove();}}});
+  window.addEventListener('keydown',e=>{if(e.key==='Escape'){const win=[...apps.values()].filter(w=>!w.classList.contains('hidden')).sort((a,b)=>Number(b.style.zIndex)-Number(a.style.zIndex))[0];if(win){win._cleanup?.();apps.delete(win.dataset.app);win.remove();}}});
   setTimeout(()=>{$('#boot').remove();desktop.classList.remove('hidden');},950);
 })();
